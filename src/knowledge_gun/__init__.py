@@ -30,25 +30,27 @@ from typing import Iterable
 
 __version__ = "0.1.0"
 
-# Repo root: src/knowledge_gun/__init__.py → up two = repo root.
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+# Bundled demo data ships inside the package so it travels with the wheel.
+# Override any of these via env vars to point at your own graph.
+_PACKAGE_DIR = Path(__file__).resolve().parent
+_DEMO_DIR = _PACKAGE_DIR / "demo_graph"
 
 GRAPH_PATH = Path(
     os.environ.get(
         "KNOWLEDGE_GUN_GRAPH_PATH",
-        _REPO_ROOT / "examples" / "demo_graph" / "graph.json",
+        _DEMO_DIR / "graph.json",
     )
 )
 BUNDLE_DIR = Path(
     os.environ.get(
         "KNOWLEDGE_GUN_INTRO_DIR",
-        _REPO_ROOT / "examples" / "demo_graph" / "intros",
+        _DEMO_DIR / "intros",
     )
 )
 ROOTS_DIR = Path(
     os.environ.get(
         "KNOWLEDGE_GUN_ROOTS_DIR",
-        _REPO_ROOT / "examples" / "demo_graph" / "roots",
+        _DEMO_DIR / "roots",
     )
 )
 

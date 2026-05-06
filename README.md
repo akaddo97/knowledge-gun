@@ -24,9 +24,16 @@ The output is a single context bundle, typically two to four thousand words, rea
 
 ## Quickstart
 
+Requires Python 3.11+. **macOS users** — if your `python3` on PATH is Homebrew Python 3.13 or 3.14, you may hit a `platform.mac_ver()` returned empty value error from `uv` or pip. The fix is to use Python 3.12 explicitly:
+
 ```bash
-cd knowledge-gun
-python -m venv .venv && source .venv/bin/activate
+# macOS Homebrew (works around the Python 3.13/3.14 platform.mac_ver bug)
+uv venv --python /opt/homebrew/opt/python@3.12/bin/python3.12 .venv
+
+# Or any other system with a working Python 3.11+
+python3 -m venv .venv
+
+source .venv/bin/activate
 pip install -e ".[dev]"
 
 # Run against the bundled demo graph (a fictional indie game studio).
@@ -36,6 +43,15 @@ knowledge-gun --list                     # show configured topics + paths
 ```
 
 The demo graph ships with four topics: `studio`, `team`, `projects`, `industry`. Each produces a one- to two-thousand-word bundle.
+
+### Install from GitHub (one-liner, no clone needed)
+
+```bash
+uv venv --python /opt/homebrew/opt/python@3.12/bin/python3.12 /tmp/kg-test \
+  && uv pip install --python /tmp/kg-test/bin/python git+https://github.com/akaddo97/knowledge-gun \
+  && /tmp/kg-test/bin/knowledge-gun --topic studio | head -30
+# Cleanup: rm -rf /tmp/kg-test
+```
 
 ## Bring your own graph
 
@@ -71,7 +87,7 @@ This shape is intentionally the same one used by `graphify` and similar curated-
 
 ### Intros directory
 
-One markdown file per topic, named `<topic>.intro.md`. Hand-written prose — this is the bit Knowledge Gun cannot generate. Five hundred to a thousand words per intro is typical. The demo intros under `examples/demo_graph/intros/` are reference templates.
+One markdown file per topic, named `<topic>.intro.md`. Hand-written prose — this is the bit Knowledge Gun cannot generate. Five hundred to a thousand words per intro is typical. The demo intros under `src/knowledge_gun/demo_graph/intros/` are reference templates.
 
 ### Roots directory
 
@@ -133,10 +149,10 @@ The trade-off: Knowledge Gun is single-graph, single-topic per bundle, and topic
 
 ## Demo graph
 
-The bundled `examples/demo_graph/` is a fully fictional indie game studio (Lantern-Bough Games — six people, three projects, made up for the demo). It exists to make the tool runnable from a fresh clone without any setup. Regenerate it with:
+The bundled `src/knowledge_gun/demo_graph/` is a fully fictional indie game studio (Lantern-Bough Games — six people, three projects, made up for the demo). It exists to make the tool runnable from a fresh clone without any setup. Regenerate it with:
 
 ```bash
-python examples/demo_graph/generate.py
+python src/knowledge_gun/demo_graph/generate.py
 ```
 
 ## Tests
