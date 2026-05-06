@@ -1,6 +1,6 @@
 # Knowledge Gun
 
-Generate paste-ready chatbot context bundles from a curated knowledge graph. Run once, paste once, your assistant is briefed on your career, projects, network or domain expertise. No vector database. No embedding cost. Pure markdown.
+Generate paste-ready chatbot context bundles from a curated knowledge graph. Run once, paste once, your assistant is briefed with perfect context (e.g. career, projects, network or domain expertise). No vector database. No embedding cost. Just markdown.
 
 ## What it is
 
@@ -132,7 +132,7 @@ md = generate_bundle("studio")
 
 ## Why not vector RAG?
 
-Vector RAG is the default reach for "give the LLM context". For curated personal knowledge graphs it is the wrong tool.
+Vector RAG is the default reach for "give the LLM context". For curated personal knowledge graphs it's the wrong tool.
 
 - **Curation is the moat.** A vector index works without curation, but it loses the structure you spent time building. Knowledge Gun assumes you've curated and rewards that work — your graph's edges, file_types and aliases all show up in the rendered output.
 - **No embedding cost, no embedding drift.** The graph is plain JSON. Regenerating a bundle is a sub-second filesystem read.
