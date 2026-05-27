@@ -13,8 +13,8 @@ Public surface:
     render_neighbourhood_md(nb)   — format neighbourhood as readable markdown
     generate_bundle(topic)        — full assembled bundle (never raises)
 
-Defaults point at the bundled demo graph under ``examples/demo_graph/``. Override
-via env vars: ``KNOWLEDGE_GUN_GRAPH_PATH``, ``KNOWLEDGE_GUN_INTRO_DIR``,
+Defaults point at the bundled demo graph under ``src/knowledge_gun/demo_graph/``.
+Override via env vars: ``KNOWLEDGE_GUN_GRAPH_PATH``, ``KNOWLEDGE_GUN_INTRO_DIR``,
 ``KNOWLEDGE_GUN_ROOTS_DIR``. Tests can also patch the module-level paths.
 
 The generator is a read-only consumer of the graph file. No caching — bundles

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the synthetic demo graph for Knowledge Gun.
 
-Builds a fictional indie-game-studio knowledge graph (30 nodes, ~50 edges) and
+Builds a fictional indie-game-studio knowledge graph (30 nodes, 51 edges) and
 writes it to ``graph.json`` next to this script. Deterministic — running this
 multiple times produces byte-identical output.
 
@@ -9,8 +9,8 @@ The studio is fictional. Names, projects, companies and cities are invented for
 the demo. Any resemblance to real studios is unintended.
 
 Usage:
-    python examples/demo_graph/generate.py
-    python examples/demo_graph/generate.py --out path/to/graph.json
+    python src/knowledge_gun/demo_graph/generate.py
+    python src/knowledge_gun/demo_graph/generate.py --out path/to/graph.json
 """
 from __future__ import annotations
 
