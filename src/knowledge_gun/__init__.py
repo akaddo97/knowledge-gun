@@ -13,8 +13,8 @@ Public surface:
     render_neighbourhood_md(nb)   — format neighbourhood as readable markdown
     generate_bundle(topic)        — full assembled bundle (never raises)
 
-Defaults point at the bundled demo graph under ``examples/demo_graph/``. Override
-via env vars: ``KNOWLEDGE_GUN_GRAPH_PATH``, ``KNOWLEDGE_GUN_INTRO_DIR``,
+Defaults point at the bundled demo graph under ``src/knowledge_gun/demo_graph/``.
+Override via env vars: ``KNOWLEDGE_GUN_GRAPH_PATH``, ``KNOWLEDGE_GUN_INTRO_DIR``,
 ``KNOWLEDGE_GUN_ROOTS_DIR``. Tests can also patch the module-level paths.
 
 The generator is a read-only consumer of the graph file. No caching — bundles
@@ -23,10 +23,13 @@ regenerate on every request.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from collections import deque
 from pathlib import Path
 from typing import Iterable
+
+log = logging.getLogger(__name__)
 
 __version__ = "0.1.0"
 
@@ -35,24 +38,23 @@ __version__ = "0.1.0"
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEMO_DIR = _PACKAGE_DIR / "demo_graph"
 
-GRAPH_PATH = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_GRAPH_PATH",
-        _DEMO_DIR / "graph.json",
-    )
-)
-BUNDLE_DIR = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_INTRO_DIR",
-        _DEMO_DIR / "intros",
-    )
-)
-ROOTS_DIR = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_ROOTS_DIR",
-        _DEMO_DIR / "roots",
-    )
-)
+
+def _env_path(var: str, default: Path) -> Path:
+    """Resolve a Path from an env var, treating empty string as unset.
+
+    ``os.environ.get(var, default)`` returns the default only when ``var`` is
+    absent. If the user sets ``var=""`` (common in shell-script bugs and CI
+    misconfig), ``get`` returns ``""`` and ``Path("")`` resolves to the current
+    working directory — silently bypassing the demo fallback and producing an
+    empty bundle. Treating empty string as unset keeps the BYOG contract honest.
+    """
+    val = os.environ.get(var)
+    return Path(val) if val else default
+
+
+GRAPH_PATH = _env_path("KNOWLEDGE_GUN_GRAPH_PATH", _DEMO_DIR / "graph.json")
+BUNDLE_DIR = _env_path("KNOWLEDGE_GUN_INTRO_DIR", _DEMO_DIR / "intros")
+ROOTS_DIR = _env_path("KNOWLEDGE_GUN_ROOTS_DIR", _DEMO_DIR / "roots")
 
 NEIGHBOURHOOD_NODE_CAP = 80
 DEFAULT_DEPTH = 2
@@ -341,6 +343,7 @@ def generate_bundle(topic: str) -> str:
         ]
         return "".join(parts)
     except Exception as exc:  # pragma: no cover
+        log.exception("generate_bundle failed for topic %r", topic)
         return (
             f"# Bundle generator error: {topic}\n\n"
             f"Unexpected failure assembling the bundle: {exc!r}.\n"

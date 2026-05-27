@@ -1,10 +1,18 @@
 # Knowledge Gun
 
+[![tests](https://github.com/akaddo97/knowledge-gun/actions/workflows/test.yml/badge.svg)](https://github.com/akaddo97/knowledge-gun/actions/workflows/test.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
+
 Generate paste-ready chatbot context bundles from a curated knowledge graph. Run once, paste once, your assistant is briefed with perfect context (e.g. career, projects, network or domain expertise). No vector database. No embedding cost. Just markdown.
 
 ## What it is
 
 A topic-scoped graph-neighbourhood walker plus hand-written intro files. Point Knowledge Gun at a JSON knowledge graph, give it a topic with three to six anchor node ids, and it walks the graph two hops out from those anchors, formats the result as readable markdown, and prepends a curated intro paragraph. The output is a single message you paste into the opening turn of a fresh chat.
+
+## Pair with `knowledge-gun-mcp`
+
+The CLI is the standalone path: terminal → bundle → clipboard → paste. If you live inside an MCP-aware client (Claude Desktop, Cursor, VS Code Copilot Chat, Claude Code), use [`knowledge-gun-mcp`](https://github.com/akaddo97/knowledge-gun-mcp) — the wrapper exposes Knowledge Gun's bundle generation as tools you can call inline from chat. Same library underneath; different transport.
 
 ## The problem
 
@@ -21,6 +29,8 @@ A curated knowledge graph plus a hand-written intro per topic plus a list of anc
 5. Render as markdown with a framing header and a usage footer.
 
 The output is a single context bundle, typically two to four thousand words, ready to paste.
+
+**Status:** alpha; stable API surface. Multi-graph fan-in is on the roadmap (see Limits).
 
 ## Quickstart
 
@@ -161,7 +171,7 @@ python src/knowledge_gun/demo_graph/generate.py
 pytest tests/ -v
 ```
 
-Twenty-five tests covering the BFS walker, the markdown renderer, the topic loader, the CLI, and three demo-specific assertions that prove the bundled graph still produces the expected bundles.
+Thirty-nine tests covering the BFS walker, the markdown renderer, the topic loader, the CLI surface (`--topic`, `--copy`, `--list`, `--no-graph`), the BYOG env-var contract, malformed-input tolerance, and three demo-specific assertions that prove the bundled graph still produces the expected bundles.
 
 ## License
 
