@@ -14,12 +14,18 @@ since this package ships CLI-only):
   - Each topic's bundle stays under the 4,000-word cap.
   - Demo-specific: studio bundle contains the founder's name; team bundle lists
     all six team members; projects bundle mentions all three projects.
+  - BYOG public contract: _env_path treats empty string as unset; module-level
+    GRAPH_PATH override loads a custom graph; _load_graph tolerates malformed
+    JSON; _unknown_topic_fallback names the "no topics configured" case.
+  - CLI surface: --list prints paths + topics; --copy falls back to stdout when
+    pbcopy is missing or exits non-zero; --copy invokes pbcopy on success.
 
 HOW TO RUN
   pytest tests/ -v
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -30,6 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 import knowledge_gun as bg  # noqa: E402
+from knowledge_gun import cli  # noqa: E402
 
 
 TOPICS = ["studio", "team", "projects", "industry"]
@@ -258,3 +265,106 @@ def test_cli_invalid_topic_exits_nonzero():
     )
     assert proc.returncode != 0
     assert "definitely_not_real" in proc.stderr or "invalid choice" in proc.stderr.lower()
+
+
+def test_cli_list_prints_paths_and_topics():
+    """--list emits the resolved graph + intros + roots paths and the topic set."""
+    proc = subprocess.run(
+        [sys.executable, "-m", "knowledge_gun.cli", "--list"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        cwd=str(ROOT),
+        env={**__import__("os").environ, "PYTHONPATH": str(ROOT / "src")},
+    )
+    assert proc.returncode == 0
+    assert "Graph:" in proc.stdout
+    assert "Intros:" in proc.stdout
+    assert "Roots:" in proc.stdout
+    assert "Topics:" in proc.stdout
+    for t in TOPICS:
+        assert t in proc.stdout, f"missing topic in --list output: {t}"
+
+
+# ── _emit (CLI --copy) ────────────────────────────────────────────────────────
+
+def test_emit_copy_falls_back_to_stdout_when_pbcopy_missing(monkeypatch, capsys):
+    """pbcopy absent → stderr notice + stdout fallback + rc=1."""
+    monkeypatch.setattr(cli.shutil, "which", lambda _name: None)
+    rc = cli._emit("# hello\n", "test", copy=True)
+    out = capsys.readouterr()
+    assert rc == 1
+    assert "# hello" in out.out
+    assert "pbcopy not available" in out.err
+
+
+def test_emit_copy_falls_back_to_stdout_when_pbcopy_fails(monkeypatch, capsys):
+    """pbcopy present but exits non-zero → stderr notice + stdout fallback + rc=1."""
+    monkeypatch.setattr(cli.shutil, "which", lambda _name: "/usr/bin/pbcopy")
+
+    def fake_run(cmd, **kwargs):
+        raise subprocess.CalledProcessError(returncode=2, cmd=cmd)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    rc = cli._emit("# hello\n", "test", copy=True)
+    out = capsys.readouterr()
+    assert rc == 1
+    assert "# hello" in out.out
+    assert "pbcopy exited 2" in out.err
+
+
+def test_emit_copy_invokes_pbcopy_on_success(monkeypatch, capsys):
+    """pbcopy present + zero exit → subprocess invoked with bundle on stdin + rc=0."""
+    monkeypatch.setattr(cli.shutil, "which", lambda _name: "/usr/bin/pbcopy")
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append((cmd, kwargs.get("input"), kwargs.get("check")))
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    rc = cli._emit("# hello\n", "studio", copy=True)
+    out = capsys.readouterr()
+    assert rc == 0
+    assert calls == [(["/usr/bin/pbcopy"], b"# hello\n", True)]
+    assert "studio" in out.err
+    assert "copied to clipboard" in out.err
+
+
+# ── BYOG public contract ──────────────────────────────────────────────────────
+
+def test_env_path_treats_empty_string_as_unset(monkeypatch, tmp_path):
+    """KNOWLEDGE_GUN_* = "" must fall back to the default, not Path("")."""
+    default = tmp_path / "default.json"
+    monkeypatch.setenv("KNOWLEDGE_GUN_TEST_EMPTY", "")
+    assert bg._env_path("KNOWLEDGE_GUN_TEST_EMPTY", default) == default
+    monkeypatch.delenv("KNOWLEDGE_GUN_TEST_EMPTY", raising=False)
+    assert bg._env_path("KNOWLEDGE_GUN_TEST_EMPTY", default) == default
+    monkeypatch.setenv("KNOWLEDGE_GUN_TEST_EMPTY", str(tmp_path / "custom.json"))
+    assert bg._env_path("KNOWLEDGE_GUN_TEST_EMPTY", default) == tmp_path / "custom.json"
+
+
+def test_byog_graph_override_loads_custom_graph(monkeypatch, tmp_path):
+    """Module-level GRAPH_PATH override must drive _load_graph at call time."""
+    custom = tmp_path / "custom.json"
+    custom.write_text(json.dumps({
+        "nodes": [{"id": "n1", "label": "N1", "file_type": "person"}],
+        "edges": [],
+    }))
+    monkeypatch.setattr(bg, "GRAPH_PATH", custom)
+    g = bg._load_graph()
+    assert [n["id"] for n in g["nodes"]] == ["n1"]
+
+
+def test_load_graph_malformed_json_returns_empty(monkeypatch, tmp_path):
+    """Malformed JSON at GRAPH_PATH must degrade to empty, never raise."""
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not valid json")
+    monkeypatch.setattr(bg, "GRAPH_PATH", bad)
+    assert bg._load_graph() == {"nodes": [], "edges": []}
+
+
+def test_unknown_topic_fallback_when_no_topics_configured(monkeypatch, tmp_path):
+    """If no intro files exist, the fallback surfaces the 'no topics configured' case."""
+    monkeypatch.setattr(bg, "BUNDLE_DIR", tmp_path)
+    md = bg._unknown_topic_fallback("anything")
+    assert "no bundle topics are configured" in md.lower()

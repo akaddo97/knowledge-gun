@@ -171,7 +171,7 @@ python src/knowledge_gun/demo_graph/generate.py
 pytest tests/ -v
 ```
 
-Twenty-five tests covering the BFS walker, the markdown renderer, the topic loader, the CLI, and three demo-specific assertions that prove the bundled graph still produces the expected bundles.
+Thirty-three tests covering the BFS walker, the markdown renderer, the topic loader, the CLI surface (`--topic`, `--copy`, `--list`), the BYOG env-var contract, malformed-input tolerance, and three demo-specific assertions that prove the bundled graph still produces the expected bundles.
 
 ## License
 
