@@ -23,10 +23,13 @@ regenerate on every request.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from collections import deque
 from pathlib import Path
 from typing import Iterable
+
+log = logging.getLogger(__name__)
 
 __version__ = "0.1.0"
 
@@ -340,6 +343,7 @@ def generate_bundle(topic: str) -> str:
         ]
         return "".join(parts)
     except Exception as exc:  # pragma: no cover
+        log.exception("generate_bundle failed for topic %r", topic)
         return (
             f"# Bundle generator error: {topic}\n\n"
             f"Unexpected failure assembling the bundle: {exc!r}.\n"
