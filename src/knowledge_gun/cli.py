@@ -3,10 +3,14 @@
 Usage:
     knowledge-gun --topic studio
     knowledge-gun --topic team --copy
+    knowledge-gun --topic studio --no-graph
     python -m knowledge_gun.cli --list
 
 ``--copy`` pipes the bundle to ``pbcopy`` on macOS; falls back to stdout
 elsewhere. ``--list`` prints the configured topics and exits.
+``--no-graph`` emits only the curated intro, skipping the dynamic graph
+snapshot — useful when the graph isn't curated yet, or for sharing the
+brief with a human reader.
 
 Bring your own graph + intros + roots:
 
@@ -28,6 +32,7 @@ from . import (
     GRAPH_PATH,
     ROOTS_DIR,
     generate_bundle,
+    load_intro,
 )
 
 
@@ -58,7 +63,36 @@ def _build_parser(topics: list[str]) -> argparse.ArgumentParser:
         action="store_true",
         help="List configured topics and the resolved graph + intro paths, then exit.",
     )
+    parser.add_argument(
+        "--no-graph",
+        action="store_true",
+        help="Emit only the curated intro; skip the dynamic graph-neighbourhood snapshot.",
+    )
     return parser
+
+
+def _intro_only_bundle(topic: str) -> str:
+    """Assemble an intro-only bundle — skips the graph snapshot section.
+
+    Uses only the public API (``load_intro``, ``AVAILABLE_TOPICS``) so the
+    full bundle generator remains the single source of truth for the
+    graph-walking + rendering path.
+    """
+    intro = load_intro(topic)
+    if intro is None:
+        topics_str = ", ".join(AVAILABLE_TOPICS) or "(none configured)"
+        return (
+            f"# Topic not found: {topic}\n\n"
+            f"Available topics: {topics_str}.\n"
+        )
+    title = topic.replace("_", " ").title()
+    return (
+        f"# {title} — context bundle (intro only)\n\n"
+        "> Paste this as the opening message of a fresh chat. The graph\n"
+        "> snapshot has been omitted; this is the static brief only.\n\n"
+        "## Static brief\n\n"
+        + intro.rstrip() + "\n"
+    )
 
 
 def _emit(md: str, topic: str, copy: bool) -> int:
@@ -107,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.topic:
         parser.error("--topic is required (or use --list to see configured topics)")
 
-    md = generate_bundle(args.topic)
+    md = _intro_only_bundle(args.topic) if args.no_graph else generate_bundle(args.topic)
     return _emit(md, args.topic, args.copy)
 
 

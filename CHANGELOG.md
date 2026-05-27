@@ -17,10 +17,6 @@ All notable changes to this project follow [Keep a Changelog](https://keepachang
 
 - Refreshed docstring paths + demo-graph node-count after the `0e26039` relocation (was `examples/demo_graph/`, now `src/knowledge_gun/demo_graph/`).
 
-### Removed
-
-- Empty top-level `docs/` placeholder folder.
-
 ## [0.1.0] - 2026-05-06
 
 ### Added
