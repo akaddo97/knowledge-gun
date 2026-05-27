@@ -71,7 +71,15 @@ def _emit(md: str, topic: str, copy: bool) -> int:
             )
             sys.stdout.write(md)
             return 1
-        subprocess.run([pbcopy], input=md.encode(), check=True)
+        try:
+            subprocess.run([pbcopy], input=md.encode(), check=True)
+        except subprocess.CalledProcessError as exc:
+            print(
+                f"[knowledge-gun] pbcopy exited {exc.returncode} — emitting to stdout instead",
+                file=sys.stderr,
+            )
+            sys.stdout.write(md)
+            return 1
         print(
             f"[knowledge-gun] {topic}: {len(md):,} chars copied to clipboard",
             file=sys.stderr,
