@@ -35,24 +35,23 @@ __version__ = "0.1.0"
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEMO_DIR = _PACKAGE_DIR / "demo_graph"
 
-GRAPH_PATH = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_GRAPH_PATH",
-        _DEMO_DIR / "graph.json",
-    )
-)
-BUNDLE_DIR = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_INTRO_DIR",
-        _DEMO_DIR / "intros",
-    )
-)
-ROOTS_DIR = Path(
-    os.environ.get(
-        "KNOWLEDGE_GUN_ROOTS_DIR",
-        _DEMO_DIR / "roots",
-    )
-)
+
+def _env_path(var: str, default: Path) -> Path:
+    """Resolve a Path from an env var, treating empty string as unset.
+
+    ``os.environ.get(var, default)`` returns the default only when ``var`` is
+    absent. If the user sets ``var=""`` (common in shell-script bugs and CI
+    misconfig), ``get`` returns ``""`` and ``Path("")`` resolves to the current
+    working directory — silently bypassing the demo fallback and producing an
+    empty bundle. Treating empty string as unset keeps the BYOG contract honest.
+    """
+    val = os.environ.get(var)
+    return Path(val) if val else default
+
+
+GRAPH_PATH = _env_path("KNOWLEDGE_GUN_GRAPH_PATH", _DEMO_DIR / "graph.json")
+BUNDLE_DIR = _env_path("KNOWLEDGE_GUN_INTRO_DIR", _DEMO_DIR / "intros")
+ROOTS_DIR = _env_path("KNOWLEDGE_GUN_ROOTS_DIR", _DEMO_DIR / "roots")
 
 NEIGHBOURHOOD_NODE_CAP = 80
 DEFAULT_DEPTH = 2
